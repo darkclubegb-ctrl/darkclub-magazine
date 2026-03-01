@@ -83,7 +83,7 @@ export default function SalesPage() {
                     <div
                         className="flex flex-col items-center justify-center mb-12 sm:mb-16"
                         style={{
-                            background: 'rgba(255,255,255,0.18)',
+                            background: 'rgba(255,255,255,0.15)',
                             backdropFilter: 'blur(12px)',
                             WebkitBackdropFilter: 'blur(12px)',
                             padding: 'clamp(30px, 6vw, 60px) clamp(40px, 10vw, 100px)',

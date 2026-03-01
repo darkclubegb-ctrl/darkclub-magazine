@@ -15,6 +15,13 @@ FOR INSERT
 TO authenticated
 WITH CHECK (bucket_id = 'media');
 
+-- Allow authenticated users to UPDATE files (Needed for upsert/replace)
+CREATE POLICY "Authenticated update"
+ON storage.objects
+FOR UPDATE
+TO authenticated
+USING (bucket_id = 'media');
+
 -- Allow everyone to READ (SELECT) files (public CDN)
 CREATE POLICY "Public read"
 ON storage.objects

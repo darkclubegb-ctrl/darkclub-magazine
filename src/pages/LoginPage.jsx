@@ -14,10 +14,20 @@ export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [displayName, setDisplayName] = useState('');
+    const [magazineName, setMagazineName] = useState(''); // New field for slug
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
+
+    const slugify = (text) => {
+        return text.toString().toLowerCase()
+            .replace(/\s+/g, '-')           // Replace spaces with -
+            .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+            .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+            .replace(/^-+/, '')             // Trim - from start of text
+            .replace(/-+$/, '');            // Trim - from end of text
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -48,7 +58,14 @@ export default function LoginPage() {
                 return;
             }
 
-            const { data, error: err } = await signUp(email, password, displayName);
+            const generatedSlug = slugify(magazineName);
+            if (!generatedSlug) {
+                setError('Nome da revista inválido.');
+                setLoading(false);
+                return;
+            }
+
+            const { data, error: err } = await signUp(email, password, displayName, magazineName, generatedSlug);
             if (err) {
                 setError(err.message);
                 setLoading(false);
@@ -103,19 +120,39 @@ export default function LoginPage() {
                 <form onSubmit={handleSubmit} className="space-y-5">
 
                     {mode === 'register' && (
-                        <div>
-                            <label className="font-body uppercase text-black/30 block mb-1" style={{ fontSize: '8px', letterSpacing: '0.35em' }}>
-                                Nome
-                            </label>
-                            <input
-                                type="text"
-                                value={displayName}
-                                onChange={e => setDisplayName(e.target.value)}
-                                required
-                                className="w-full border border-black/15 bg-white font-body text-sm text-black px-3 py-3 focus:outline-none focus:border-black transition-colors"
-                                placeholder="Seu nome artístico"
-                            />
-                        </div>
+                        <>
+                            <div>
+                                <label className="font-body uppercase text-black/30 block mb-1" style={{ fontSize: '8px', letterSpacing: '0.35em' }}>
+                                    Nome
+                                </label>
+                                <input
+                                    type="text"
+                                    value={displayName}
+                                    onChange={e => setDisplayName(e.target.value)}
+                                    required
+                                    className="w-full border border-black/15 bg-white font-body text-sm text-black px-3 py-3 focus:outline-none focus:border-black transition-colors"
+                                    placeholder="Seu nome artístico"
+                                />
+                            </div>
+                            <div>
+                                <label className="font-body uppercase text-black/30 block mb-1 mt-4" style={{ fontSize: '8px', letterSpacing: '0.35em' }}>
+                                    Nome da sua Revista (Obrigatório)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={magazineName}
+                                    onChange={e => setMagazineName(e.target.value)}
+                                    required
+                                    className="w-full border border-black/15 bg-white font-body text-sm text-black px-3 py-3 focus:outline-none focus:border-black transition-colors"
+                                    placeholder="Ex: @seunome"
+                                />
+                                {magazineName && (
+                                    <p className="font-body text-black/40 mt-1" style={{ fontSize: '10px' }}>
+                                        Link: darkclub.com/modelo/<span className="text-black font-medium">{slugify(magazineName)}</span>
+                                    </p>
+                                )}
+                            </div>
+                        </>
                     )}
 
                     <div>

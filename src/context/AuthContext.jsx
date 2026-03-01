@@ -66,7 +66,7 @@ export function AuthProvider({ children }) {
         return { data, error };
     }
 
-    async function signUp(email, password, displayName) {
+    async function signUp(email, password, displayName, magazineName, slug) {
         if (!supabase) return { error: { message: 'Supabase not configured' } };
         const { data, error } = await supabase.auth.signUp({
             email,
@@ -76,6 +76,20 @@ export function AuthProvider({ children }) {
         // MVP: set session immediately — no email confirmation gate
         if (!error && data.user) {
             setUser(data.user);
+
+            // Wait for profile to be created via trigger before inserting model, or insert the model immediately
+            // Insert model into models table to reserve the slug
+            const { error: modelError } = await supabase.from('models').insert({
+                slug: slug,
+                name: magazineName,
+                owner_id: data.user.id,
+                published: false
+            });
+
+            if (modelError) {
+                console.error('Error inserting initial model:', modelError);
+            }
+
             const p = await fetchProfile(data.user.id);
             setProfile(p);
         }
