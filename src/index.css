@@ -1,0 +1,152 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   BASE
+───────────────────────────────────────────────────────────────────────────── */
+@layer base {
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-size: 16px;
+  }
+
+  body {
+    @apply font-body bg-brand-white text-brand-black;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  /* Minimal luxury scrollbar */
+  ::-webkit-scrollbar {
+    width: 2px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #fff;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #000;
+  }
+
+  /* Selection */
+  ::selection {
+    background: #000;
+    color: #fff;
+  }
+
+  /* Image protection — global */
+  img,
+  video {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    /* DO NOT set pointer-events:none globally — breaks links/buttons */
+  }
+
+  /* Drop cap — editorial first letter */
+  .drop-cap::first-letter {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 6rem;
+    font-weight: 300;
+    /* ultra-thin for Gentlewoman feel */
+    line-height: 0.75;
+    float: left;
+    margin-right: 0.08em;
+    margin-top: 0.05em;
+    color: #000;
+    letter-spacing: -0.03em;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   UTILITIES
+───────────────────────────────────────────────────────────────────────────── */
+@layer utilities {
+
+  /* Ghost button — outline transitions to solid on hover */
+  .btn-ghost {
+    display: inline-block;
+    border: 1px solid #000;
+    background: transparent;
+    color: #000;
+    font-family: 'Inter', sans-serif;
+    font-size: 9px;
+    letter-spacing: 0.45em;
+    text-transform: uppercase;
+    padding: 14px 28px;
+    transition: background 0.3s ease, color 0.3s ease;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .btn-ghost:hover {
+    background: #000;
+    color: #fff;
+  }
+
+  /* Magazine frame — white border around image (passepartout physique) */
+  .frame-magazine {
+    padding: 32px;
+    background: #fff;
+    box-shadow: 0 2px 40px rgba(0, 0, 0, 0.08);
+  }
+
+  @media (min-width: 768px) {
+    .frame-magazine {
+      padding: 48px;
+    }
+  }
+
+  /* Passepartout — thin version for gallery */
+  .passepartout {
+    padding: 8px;
+    background: #fff;
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Bleed — full width, zero margin */
+  .bleed {
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    overflow: hidden;
+  }
+
+  /* Scroll fade-in */
+  .scroll-reveal {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .scroll-reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Parallax container — overflow clip */
+  .parallax-clip {
+    overflow: hidden;
+  }
+
+  .parallax-img {
+    will-change: transform;
+    transition: transform 0.1s linear;
+  }
+}
