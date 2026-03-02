@@ -41,40 +41,43 @@ export default function LoginPage() {
             return;
         }
 
-        if (mode === 'login') {
-            const { data, error: err } = await signIn(email, password);
-            if (err) {
-                setError(err.message);
-                setLoading(false);
-                return;
-            }
-            // Redirect based on role — profile is already loaded by AuthContext
-            // Small delay to let profile load
-            setTimeout(() => navigate('/dashboard'), 300);
-        } else {
-            if (!acceptedTerms) {
-                setError('Você precisa marcar o aceite dos Termos de Uso e Autorização de Imagem.');
-                setLoading(false);
-                return;
-            }
+        try {
+            if (mode === 'login') {
+                const { data, error: err } = await signIn(email, password);
+                if (err) {
+                    setError(err.message);
+                    return; // setLoading is done in finally
+                }
+                // Redirect based on role — profile is already loaded by AuthContext
+                // Small delay to let profile load
+                setTimeout(() => navigate('/dashboard'), 300);
+            } else {
+                if (!acceptedTerms) {
+                    setError('Você precisa marcar o aceite dos Termos de Uso e Autorização de Imagem.');
+                    return;
+                }
 
-            const generatedSlug = slugify(magazineName);
-            if (!generatedSlug) {
-                setError('Nome da revista inválido.');
-                setLoading(false);
-                return;
-            }
+                const generatedSlug = slugify(magazineName);
+                if (!generatedSlug) {
+                    setError('Nome da revista inválido.');
+                    return;
+                }
 
-            const { data, error: err } = await signUp(email, password, displayName, magazineName, generatedSlug);
-            if (err) {
-                setError(err.message);
-                setLoading(false);
-                return;
+                const { data, error: err } = await signUp(email, password, displayName, magazineName, generatedSlug);
+                if (err) {
+                    setError(err.message);
+                    return;
+                }
+                setSuccess('Bem-vinda ao Darkclub! ✦ Preparando sua revista...');
+                // MVP: redirect immediately — no email confirmation required
+                setTimeout(() => navigate('/dashboard'), 900);
             }
-            setSuccess('Bem-vinda ao Darkclub! ✦ Preparando sua revista...');
+        } catch (err) {
+            console.error('Unexpected error during auth:', err);
+            setError('Ocorreu um erro inesperado.');
+        } finally {
+            // Ensures button does not stay locked in 'loading' state
             setLoading(false);
-            // MVP: redirect immediately — no email confirmation required
-            setTimeout(() => navigate('/dashboard'), 900);
         }
     };
 

@@ -11,11 +11,14 @@ export function AuthProvider({ children }) {
     // ── Fetch profile from profiles table ────────────────────
     async function fetchProfile(userId) {
         if (!supabase) return null;
-        const { data } = await supabase
+        console.log('[Auth] Fetching profile for user:', userId);
+        const { data, error } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', userId)
             .single();
+        if (error) console.error('[Auth] Fetch profile error:', error);
+        else console.log('[Auth] Profile fetched:', data);
         return data;
     }
 
@@ -27,14 +30,24 @@ export function AuthProvider({ children }) {
         }
 
         // Get initial session
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabase.auth.getSession().then(({ data: { session }, error }) => {
+            if (error) {
+                console.error('[Auth] Initial session error:', error);
+                setLoading(false);
+                return;
+            }
             const u = session?.user ?? null;
             setUser(u);
             if (u) {
-                fetchProfile(u.id).then(p => { setProfile(p); setLoading(false); });
+                fetchProfile(u.id)
+                    .then(p => { setProfile(p); setLoading(false); })
+                    .catch(e => { console.error('[Auth] Initial profile fetch error:', e); setLoading(false); });
             } else {
                 setLoading(false);
             }
+        }).catch(err => {
+            console.error('[Auth] Unexpected getSession error:', err);
+            setLoading(false);
         });
 
         // Subscribe to changes
@@ -43,8 +56,13 @@ export function AuthProvider({ children }) {
                 const u = session?.user ?? null;
                 setUser(u);
                 if (u) {
-                    const p = await fetchProfile(u.id);
-                    setProfile(p);
+                    try {
+                        const p = await fetchProfile(u.id);
+                        setProfile(p);
+                    } catch (err) {
+                        console.error('[Auth] Profile fetch error on AuthStateChange:', err);
+                        setProfile(null);
+                    }
                 } else {
                     setProfile(null);
                 }
@@ -57,43 +75,72 @@ export function AuthProvider({ children }) {
     // ── Auth actions ─────────────────────────────────────────
 
     async function signIn(email, password) {
+        console.log('[Auth] signIn called for email:', email);
         if (!supabase) return { error: { message: 'Supabase not configured' } };
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (!error && data.user) {
-            const p = await fetchProfile(data.user.id);
-            setProfile(p);
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                console.error('[Auth] signIn error:', error);
+            } else if (data && data.user) {
+                console.log('[Auth] signIn success, fetching profile...');
+                const p = await fetchProfile(data.user.id);
+                setProfile(p);
+                console.log('[Auth] signIn complete.');
+            }
+            return { data, error };
+        } catch (err) {
+            console.error('[Auth] Unexpected signIn exception:', err);
+            return { error: { message: 'Erro inesperado ao realizar login.' } };
         }
-        return { data, error };
     }
 
     async function signUp(email, password, displayName, magazineName, slug) {
+        console.log('[Auth] signUp called for email:', email);
         if (!supabase) return { error: { message: 'Supabase not configured' } };
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: { data: { display_name: displayName } },
-        });
-        // MVP: set session immediately — no email confirmation gate
-        if (!error && data.user) {
-            setUser(data.user);
 
-            // Wait for profile to be created via trigger before inserting model, or insert the model immediately
-            // Insert model into models table to reserve the slug
-            const { error: modelError } = await supabase.from('models').insert({
-                slug: slug,
-                name: magazineName,
-                owner_id: data.user.id,
-                published: false
+        try {
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+                options: { data: { display_name: displayName } },
             });
 
-            if (modelError) {
-                console.error('Error inserting initial model:', modelError);
+            if (error) {
+                console.error('[Auth] signUp error:', error);
+                return { data, error };
             }
 
-            const p = await fetchProfile(data.user.id);
-            setProfile(p);
+            console.log('[Auth] signUp Supabase Auth success:', data.user?.id);
+            // MVP: set session immediately — no email confirmation gate
+            if (data.user) {
+                setUser(data.user);
+
+                // Wait for profile to be created via trigger before inserting model, or insert the model immediately
+                // Insert model into models table to reserve the slug
+                console.log('[Auth] Attempting to insert initial model with slug:', slug);
+                const { error: modelError } = await supabase.from('models').insert({
+                    slug: slug,
+                    name: magazineName,
+                    owner_id: data.user.id,
+                    published: false
+                });
+
+                if (modelError) {
+                    console.error('[Auth] Error inserting initial model:', modelError);
+                } else {
+                    console.log('[Auth] Initial model inserted successfully.');
+                }
+
+                console.log('[Auth] Fetching profile...');
+                const p = await fetchProfile(data.user.id);
+                setProfile(p);
+                console.log('[Auth] signUpcomplete.');
+            }
+            return { data, error };
+        } catch (err) {
+            console.error('[Auth] Unexpected signUp exception:', err);
+            return { error: { message: 'Erro inesperado ao criar conta.' } };
         }
-        return { data, error };
     }
 
     async function signOut() {

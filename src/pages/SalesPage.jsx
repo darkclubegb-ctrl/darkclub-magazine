@@ -209,7 +209,6 @@ export default function SalesPage() {
                             className="font-body uppercase text-[9px] tracking-[4px] pb-2 transition-all"
                             style={{
                                 color: activeSlide === idx ? '#000000' : '#999999',
-                                borderBottom: activeSlide === idx ? '1px solid #000' : '1px solid transparent',
                                 background: 'none',
                                 border: 'none',
                                 borderBottom: activeSlide === idx ? '1px solid #000' : '1px solid transparent',
