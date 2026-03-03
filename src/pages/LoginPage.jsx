@@ -36,20 +36,21 @@ export default function LoginPage() {
         setLoading(true);
 
         if (!isConfigured) {
-            setError('Supabase não configurado. Adicione VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY ao .env');
+            setError('⚠️ Supabase não configurado. As variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY não estão presentes no build. Adicione-as nas Environment Variables da Vercel e faça um novo deploy.');
             setLoading(false);
             return;
         }
 
         try {
             if (mode === 'login') {
+                console.log('[Login] Attempting signIn...');
                 const { data, error: err } = await signIn(email, password);
                 if (err) {
-                    setError(err.message);
-                    return; // setLoading is done in finally
+                    console.error('[Login] signIn failed:', err);
+                    setError(err.message || JSON.stringify(err));
+                    return;
                 }
-                // Redirect based on role — profile is already loaded by AuthContext
-                // Small delay to let profile load
+                console.log('[Login] signIn succeeded, redirecting...');
                 setTimeout(() => navigate('/dashboard'), 300);
             } else {
                 if (!acceptedTerms) {
@@ -63,20 +64,20 @@ export default function LoginPage() {
                     return;
                 }
 
+                console.log('[Login] Attempting signUp with slug:', generatedSlug);
                 const { data, error: err } = await signUp(email, password, displayName, magazineName, generatedSlug);
                 if (err) {
-                    setError(err.message);
+                    console.error('[Login] signUp failed:', err);
+                    setError(err.message || JSON.stringify(err));
                     return;
                 }
                 setSuccess('Bem-vinda ao Darkclub! ✦ Preparando sua revista...');
-                // MVP: redirect immediately — no email confirmation required
                 setTimeout(() => navigate('/dashboard'), 900);
             }
         } catch (err) {
-            console.error('Unexpected error during auth:', err);
-            setError('Ocorreu um erro inesperado.');
+            console.error('[Login] Unexpected exception:', err);
+            setError(`Erro inesperado: ${err.message || String(err)}`);
         } finally {
-            // Ensures button does not stay locked in 'loading' state
             setLoading(false);
         }
     };
