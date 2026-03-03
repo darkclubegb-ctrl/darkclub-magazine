@@ -280,7 +280,7 @@ export default function DashboardPage() {
 
     const myModel = useMemo(() => {
         if (!models.length) return null;
-        return models.find(m => m.owner_id === user?.id) || models[0];
+        return models.find(m => m.owner_id === user?.id) || null;
     }, [models, user]);
 
     const [form, setForm] = useState({

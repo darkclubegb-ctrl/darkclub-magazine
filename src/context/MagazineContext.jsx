@@ -37,7 +37,7 @@ function reducer(state, action) {
 // Provider
 // ─────────────────────────────────────────────────
 export function MagazineProvider({ children }) {
-    const [state, dispatch] = useReducer(reducer, { models: seedModels, loading: true });
+    const [state, dispatch] = useReducer(reducer, { models: [], loading: true });
 
     // ── Fetch from Supabase ─────────────────────────────────
     const fetchModels = useCallback(async () => {
@@ -51,9 +51,15 @@ export function MagazineProvider({ children }) {
             .select('*, gallery_photos(*)')
             .order('created_at', { ascending: false });
 
-        if (error || !data?.length) {
-            // Fallback to seed data if Supabase has no models yet
-            dispatch({ type: 'SET_MODELS', payload: seedModels });
+        if (error) {
+            console.error('[Magazine] Supabase fetch error:', error);
+            dispatch({ type: 'SET_MODELS', payload: [] });
+            return;
+        }
+
+        if (!data?.length) {
+            // No models yet — start fresh (no demo fallback in production)
+            dispatch({ type: 'SET_MODELS', payload: [] });
             return;
         }
 

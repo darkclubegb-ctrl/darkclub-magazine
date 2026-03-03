@@ -111,12 +111,15 @@ export function AuthProvider({ children }) {
             }
 
             console.log('[Auth] signUp Supabase Auth success:', data.user?.id);
-            // MVP: set session immediately — no email confirmation gate
-            if (data.user) {
+
+            // Check if we actually have a session (email confirmation may block it)
+            const hasSession = !!data.session;
+            console.log('[Auth] Session active after signUp:', hasSession);
+
+            if (data.user && hasSession) {
                 setUser(data.user);
 
-                // Wait for profile to be created via trigger before inserting model, or insert the model immediately
-                // Insert model into models table to reserve the slug
+                // We have a real session — RLS will allow the insert
                 console.log('[Auth] Attempting to insert initial model with slug:', slug);
                 const { error: modelError } = await supabase.from('models').insert({
                     slug: slug,
@@ -127,6 +130,8 @@ export function AuthProvider({ children }) {
 
                 if (modelError) {
                     console.error('[Auth] Error inserting initial model:', modelError);
+                    // Non-blocking: user is created, model insert failed
+                    // They can still access dashboard and create later
                 } else {
                     console.log('[Auth] Initial model inserted successfully.');
                 }
@@ -134,7 +139,16 @@ export function AuthProvider({ children }) {
                 console.log('[Auth] Fetching profile...');
                 const p = await fetchProfile(data.user.id);
                 setProfile(p);
-                console.log('[Auth] signUpcomplete.');
+                console.log('[Auth] signUp complete.');
+            } else if (data.user && !hasSession) {
+                // Email confirmation is required — user exists but can't auth yet
+                console.warn('[Auth] signUp: session not active (email confirmation required?)');
+                return {
+                    data,
+                    error: {
+                        message: 'Conta criada! Verifique seu e-mail para confirmar o cadastro antes de continuar.'
+                    }
+                };
             }
             return { data, error };
         } catch (err) {
